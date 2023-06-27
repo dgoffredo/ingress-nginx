@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: datadog
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dd-trace-agent
+  namespace: datadog
+spec:
+  selector:
+    matchLabels:
+      name: dd-trace-agent
+  template:
+    metadata:
+      labels:
+        name: dd-trace-agent
+    spec:
+      tolerations:
+      # These tolerations are to allow the daemonset runnable on control plane nodes.
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: dd-trace-agent
+        image: ingress-controller/dd-trace-agent
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8126
+          hostPort: 8126
+          name: traceport
+          protocol: TCP
+      terminationGracePeriodSeconds: 5
